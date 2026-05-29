@@ -150,10 +150,22 @@ final class Transport
                 'ignore_errors' => true,
             ],
         ]);
-        $response = file_get_contents($url, false, $context);
+        $response = @file_get_contents($url, false, $context);
         if ($response === false) {
             throw new RuntimeException('GlobiGuard request failed.');
         }
+        
+        // Check HTTP status code
+        if (isset($http_response_header)) {
+            $statusLine = $http_response_header[0];
+            if (preg_match('/HTTP\/[\d.]+\s+(\d{3})/', $statusLine, $matches)) {
+                $statusCode = (int)$matches[1];
+                if ($statusCode < 200 || $statusCode >= 300) {
+                    throw new RuntimeException("GlobiGuard request failed with HTTP {$statusCode}.");
+                }
+            }
+        }
+        
         return $response === '' ? [] : json_decode($response, true, 512, JSON_THROW_ON_ERROR);
     }
 
@@ -209,7 +221,7 @@ final class ResourceClient
     public function list(): array { return $this->transport->request('GET', $this->basePath); }
     public function get(string $id): array { return $this->transport->request('GET', $this->basePath . '/' . rawurlencode($id)); }
     public function create(array $body): array { return $this->transport->request('POST', $this->basePath, $body); }
-    public function post(string $suffix, array $body): array { return $this->transport->request('POST', $this->basePath . '/' . ltrim($suffix, '/'), $body); }
+    public function post(string $suffix, array $body): array { return $this->transport->request('POST', $this->basePath . '/' . rawurlencode(ltrim($suffix, '/')), $body); }
 }
 
 final class GovernedActions
