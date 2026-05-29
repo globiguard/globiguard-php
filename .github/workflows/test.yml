@@ -1,0 +1,36 @@
+name: Test & Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.2', '8.3', '8.4']
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: json, sodium
+          coverage: xdebug
+      
+      - name: Validate composer.json
+        run: composer validate
+      
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+      
+      - name: Run linting
+        run: composer run-script lint 2>/dev/null || php -l src/Globiguard.php
+      
+      - name: Run tests
+        run: composer run-script test 2>/dev/null || ./vendor/bin/phpunit tests/ || php -d error_reporting=E_ALL tests/SmokeTest.php

@@ -1,0 +1,47 @@
+name: Build & Package
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.2', '8.3', '8.4']
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: json, sodium
+      
+      - name: Validate PHP files
+        run: |
+          find src tests -name "*.php" -exec php -l {} \;
+      
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress
+      
+      - name: Verify package structure
+        run: |
+          composer validate --strict
+          ls -la src/
+      
+      - name: Create package distribution
+        run: |
+          mkdir -p dist
+          zip -r dist/globiguard-php-${{ matrix.php-version }}.zip src/ composer.json README.md LICENSE || tar czf dist/globiguard-php-${{ matrix.php-version }}.tar.gz src/ composer.json README.md LICENSE
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: php-dist-php${{ matrix.php-version }}
+          path: dist/
+          retention-days: 5
