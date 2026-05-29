@@ -1,0 +1,34 @@
+{
+  "name": "globiguard/globiguard",
+  "description": "Official dependency-minimal PHP SDK for GlobiGuard trusted access workflows.",
+  "type": "library",
+  "license": "Apache-2.0",
+  "homepage": "https://globiguard.com",
+  "support": {
+    "issues": "https://github.com/globiguard/globiguard-php/issues",
+    "source": "https://github.com/globiguard/globiguard-php"
+  },
+  "authors": [
+    {
+      "name": "GlobiGuard",
+      "homepage": "https://globiguard.com"
+    }
+  ],
+  "keywords": ["globiguard", "ai-governance", "compliance", "audit", "approval", "webhooks"],
+  "require": {
+    "php": ">=8.2",
+    "ext-json": "*",
+    "ext-sodium": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "GlobiGuard\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "GlobiGuard\\Tests\\": "tests/"
+    }
+  }
+}
+
