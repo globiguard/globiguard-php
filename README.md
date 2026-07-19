@@ -23,11 +23,27 @@ $client = Client::server([
 ]);
 
 $decision = $client->governedActions()->authorizeActionOrThrow([
-    'actionType' => 'refund',
-    'actor' => ['id' => 'user_123'],
-    'target' => ['id' => 'order_456'],
+    'context' => [
+        'actionType' => 'refund.create',
+        'destination' => [
+            'type' => 'custom',
+            'name' => 'payments-production',
+        ],
+        'dataClasses' => ['CONFIDENTIAL'],
+        'actor' => [
+            'id' => 'support-agent-123',
+            'type' => 'agent',
+        ],
+        'purpose' => 'Resolve an approved customer escalation',
+        'correlationId' => 'case_456',
+        'idempotencyKey' => 'case_456:refund:v1',
+    ],
 ]);
 ```
+
+The governed client also exposes approval polling, every queue review
+transition, evidence export, evidence-package summaries, and incident replay.
+`QUEUE` and `BLOCK` stop the authorize-or-throw path before the business action.
 
 ## Webhooks
 
