@@ -8,6 +8,7 @@ use GlobiGuard\Bootstrap;
 use GlobiGuard\Client;
 use GlobiGuard\Credential;
 use GlobiGuard\Entitlements;
+use GlobiGuard\GovernedActions;
 use GlobiGuard\Transport;
 use GlobiGuard\TrustWebhook;
 
@@ -32,6 +33,33 @@ expectThrows(fn () => $browser->policies()->create([]));
 expectThrows(fn () => $browser->governedActions()->authorizeAction([]));
 expectThrows(fn () => $browser->governedActions()->reviewQueue('queue_123', 'approve'));
 expectThrows(fn () => $browser->governedActions()->exportEvidencePackage());
+
+$authorityNow = strtotime('2026-07-28T20:00:00Z');
+$executableAllow = [
+    'decision' => 'ALLOW',
+    'executable' => true,
+    'nextAction' => 'EXECUTE_EXACT_ACTION_ONCE',
+    'approvalState' => 'NOT_REQUIRED',
+    'expiresAt' => '2026-07-28T20:01:00Z',
+    'obligations' => [],
+    'modifications' => [],
+];
+GovernedActions::assertExecutableAuthorization($executableAllow, false, $authorityNow);
+foreach ([
+    ['decision' => 'MODIFY'],
+    ['decision' => 'QUEUE'],
+    ['decision' => 'BLOCK'],
+    ['decision' => 'UNKNOWN'],
+    [...$executableAllow, 'executable' => false],
+    [...$executableAllow, 'nextAction' => 'REAUTHORIZE_EXACT_ACTION'],
+    [...$executableAllow, 'approvalState' => 'PENDING'],
+    [...$executableAllow, 'expiresAt' => '2026-07-28T20:10:00Z'],
+    [...$executableAllow, 'obligations' => ['redact']],
+    [...$executableAllow, 'modifications' => ['recipient' => 'safe']],
+] as $stopped) {
+    expectThrows(fn () => GovernedActions::assertExecutableAuthorization($stopped, false, $authorityNow));
+}
+expectThrows(fn () => GovernedActions::assertExecutableAuthorization($executableAllow, true, $authorityNow));
 
 $rawBody = '{"type":"globiguard.test"}';
 $timestamp = (string) time();

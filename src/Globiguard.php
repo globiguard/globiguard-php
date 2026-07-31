@@ -267,17 +267,45 @@ final class GovernedActions
     public function authorizeActionOrThrow(array $body): array
     {
         $result = $this->authorizeAction($body);
+        self::assertExecutableAuthorization($result, ($body['dryRun'] ?? false) === true);
+        return $result;
+    }
+
+    public static function assertExecutableAuthorization(array $result, bool $simulation = false, ?int $now = null): void
+    {
         $decision = $result['decision'] ?? null;
-        if (in_array($decision, ['ALLOW', 'MODIFY'], true)) {
-            return $result;
-        }
         if ($decision === 'BLOCK') {
             throw new RuntimeException('GlobiGuard blocked the governed action.');
         }
         if ($decision === 'QUEUE') {
             throw new RuntimeException('GlobiGuard queued the governed action for review; do not perform the downstream business action yet.');
         }
-        throw new RuntimeException('GlobiGuard returned an unsupported decision; do not perform the downstream business action.');
+        if ($decision === 'MODIFY') {
+            throw new RuntimeException('Apply modifications through a typed handler and reauthorize the exact resulting action before execution.');
+        }
+        if ($decision !== 'ALLOW') {
+            throw new RuntimeException('GlobiGuard returned an unsupported decision; the governed action remains stopped.');
+        }
+        if ($simulation) {
+            throw new RuntimeException('A dry-run decision is not an execution permit. Reauthorize with dryRun disabled.');
+        }
+        if (($result['executable'] ?? null) !== true || ($result['nextAction'] ?? null) !== 'EXECUTE_EXACT_ACTION_ONCE') {
+            throw new RuntimeException('The control plane marked this response as non-executable. Reauthorize before execution.');
+        }
+        if (!in_array($result['approvalState'] ?? null, ['NOT_REQUIRED', 'APPROVED'], true)) {
+            throw new RuntimeException('Resolve review and reauthorize the exact current action before execution.');
+        }
+        $expiresAt = is_string($result['expiresAt'] ?? null) ? strtotime($result['expiresAt']) : false;
+        $currentTime = $now ?? time();
+        if ($expiresAt === false || $expiresAt <= $currentTime || $expiresAt - $currentTime > 300) {
+            throw new RuntimeException('Execution authority must have a current, bounded expiry. Reauthorize immediately before execution.');
+        }
+        if (is_array($result['obligations'] ?? null) && count($result['obligations']) > 0) {
+            throw new RuntimeException('Enforce all obligations and reauthorize before execution.');
+        }
+        if (is_array($result['modifications'] ?? null) && count($result['modifications']) > 0) {
+            throw new RuntimeException('Apply all modifications and reauthorize the exact resulting action before execution.');
+        }
     }
 
     public function authorizeAction(array $body): array
