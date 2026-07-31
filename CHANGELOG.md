@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- Corrected the GitHub Actions YAML for authenticated Packagist updates.
+
 ## 0.2.1
 
 - Updated the SDK identification header to the published package version.
