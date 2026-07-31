@@ -183,7 +183,7 @@ final class Transport
     public function authHeaders(): array
     {
         $headers = [
-            'x-globiguard-client' => 'globiguard-php/0.1.0',
+            'x-globiguard-client' => 'globiguard-php/0.2.1',
             'x-globiguard-environment' => $this->environment,
         ];
         if ($this->credential->kind === 'local') {

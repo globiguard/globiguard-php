@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Updated the SDK identification header to the published package version.
+- Updated Packagist publishing to the current authenticated JSON API.
+
 ## 0.2.0
 
 - Tightened governed-action execution so only a current, obligation-free

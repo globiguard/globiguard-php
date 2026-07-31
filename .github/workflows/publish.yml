@@ -18,4 +18,4 @@ jobs:
           php -l src/Globiguard.php
           php tests/SmokeTest.php
       - name: Packagist Webhook
-        run: curl --fail-with-body --silent --show-error --request POST --data 'repository_url=https://github.com/globiguard/globiguard-php' "https://packagist.org/api/update-package?username=globiguard&apiToken=${{ secrets.PACKAGIST_TOKEN }}"
+        run: curl --fail-with-body --silent --show-error --request POST --header 'Content-Type: application/json' --header "Authorization: Bearer ${{ secrets.PACKAGIST_USERNAME }}:${{ secrets.PACKAGIST_TOKEN }}" --data '{"repository":"https://github.com/globiguard/globiguard-php"}' https://packagist.org/api/update-package
