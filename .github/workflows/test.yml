@@ -2,14 +2,14 @@ name: Test & Lint
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ sol, main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ sol, main, develop ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run tests
         run: composer validate --strict

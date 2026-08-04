@@ -7,7 +7,7 @@ This repository uses GitHub Actions for automated testing, building, and publish
 ### Workflows
 
 #### 1. **Test & Lint** (`test.yml`)
-- **Triggers:** Every push to `main`/`develop`, and on all pull requests
+- **Triggers:** Every push to `sol`/`main`/`develop`, and on all pull requests
 - **What it does:**
   - Tests across PHP 8.2, 8.3, and 8.4
   - Validates PHP syntax
@@ -15,7 +15,7 @@ This repository uses GitHub Actions for automated testing, building, and publish
 - **Status check:** ✅ Must pass before merging to `main`
 
 #### 2. **Build & Package** (`build.yml`)
-- **Triggers:** Every push to `main`/`develop`, and on all pull requests
+- **Triggers:** Every push to `sol`/`main`/`develop`, and on all pull requests
 - **What it does:**
   - Validates Composer configuration
   - Creates distribution archives (zip/tar.gz)
@@ -34,7 +34,7 @@ This repository uses GitHub Actions for automated testing, building, and publish
   ```
 
 #### 4. **Security Scan** (`security.yml`)
-- **Triggers:** Every push to `main`/`develop`, weekly on Sunday
+- **Triggers:** Every push to `sol`/`main`/`develop`, weekly on Sunday
 - **What it does:**
   - Runs security checker
   - Runs Psalm static analysis
