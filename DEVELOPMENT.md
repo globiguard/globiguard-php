@@ -11,7 +11,7 @@ This repository uses GitHub Actions for automated testing, building, and publish
 - **What it does:**
   - Tests across PHP 8.2, 8.3, and 8.4
   - Validates PHP syntax
-  - Runs tests via PHPUnit
+  - Runs the dependency-free executable smoke suite (`tests/SmokeTest.php`)
 - **Status check:** ✅ Must pass before merging to `main`
 
 #### 2. **Build & Package** (`build.yml`)
@@ -104,7 +104,7 @@ composer install
 composer validate --strict
 
 # Run tests
-./vendor/bin/phpunit tests/
+php tests/SmokeTest.php
 
 # Or run PHP directly
 php -d error_reporting=E_ALL tests/SmokeTest.php
