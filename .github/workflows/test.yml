@@ -1,6 +1,7 @@
 name: Test & Lint
 
 on:
+  workflow_dispatch:
   push:
     branches: [ sol, main, develop ]
   pull_request:
