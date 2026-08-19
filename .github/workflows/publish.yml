@@ -9,8 +9,18 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: Verify package
+        run: |
+          php -l src/Globiguard.php
+          php tests/SmokeTest.php
       - name: Packagist Webhook
         run: |
-          curl -X POST -d 'repository_url=https://github.com/globiguard/globiguard-php' \
-            "https://packagist.org/api/update-package?username=globiguard&apiToken=${{ secrets.PACKAGIST_TOKEN }}"
+          curl --fail-with-body --silent --show-error --request POST \
+            --header 'Content-Type: application/json' \
+            --header "Authorization: Bearer ${{ secrets.PACKAGIST_USERNAME }}:${{ secrets.PACKAGIST_TOKEN }}" \
+            --data '{"repository":"https://github.com/globiguard/globiguard-php"}' \
+            https://packagist.org/api/update-package

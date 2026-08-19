@@ -1,8 +1,9 @@
 name: Security Scan
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ main, develop ]
+    branches: [ sol, main, develop ]
   schedule:
     - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM UTC
 
@@ -12,29 +13,29 @@ jobs:
     strategy:
       matrix:
         php-version: ['8.2', '8.3', '8.4']
-    
+
     steps:
-      - uses: actions/checkout@v4
-      
+      - uses: actions/checkout@v7
+
       - name: Set up PHP ${{ matrix.php-version }}
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
           extensions: json, sodium
-      
+
       - name: Install Composer
         run: composer install --prefer-dist --no-progress
-      
+
       - name: Run security checker
         continue-on-error: true
         run: |
           composer require --dev sensiolabs/security-checker || true
           php vendor/bin/security-checker security:check composer.lock || true
-      
+
       - name: Run PHP linting
         run: |
           find src tests -name "*.php" -exec php -l {} \;
-      
+
       - name: Run Psalm for static analysis
         continue-on-error: true
         run: |

@@ -1,15 +1,31 @@
 name: Test & Lint
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ main, develop ]
+    branches: [ sol, main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ sol, main, develop ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.2', '8.3', '8.4']
     steps:
-      - uses: actions/checkout@v4
-      - name: Run tests
+      - uses: actions/checkout@v7
+      - name: Set up PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: json, sodium
+          coverage: none
+      - name: Validate Composer metadata
         run: composer validate --strict
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+      - name: Lint PHP sources and tests
+        run: find src tests -name "*.php" -exec php -l {} \;
+      - name: Run executable smoke suite
+        run: php tests/SmokeTest.php

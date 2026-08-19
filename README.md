@@ -43,7 +43,9 @@ $decision = $client->governedActions()->authorizeActionOrThrow([
 
 The governed client also exposes approval polling, every queue review
 transition, evidence export, evidence-package summaries, and incident replay.
-`QUEUE` and `BLOCK` stop the authorize-or-throw path before the business action.
+Only a current, short-lived, obligation-free `ALLOW` explicitly authorizes the
+exact action once. `MODIFY`, `QUEUE`, `BLOCK`, dry-run, expired, and incomplete
+responses stop the authorize-or-throw path before the business action.
 
 ## Webhooks
 

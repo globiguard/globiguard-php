@@ -165,9 +165,14 @@ final class Transport
             throw new RuntimeException('GlobiGuard request failed.');
         }
         
-        // Check HTTP status code
-        if (isset($http_response_header)) {
-            $statusLine = $http_response_header[0];
+        // Check HTTP status code. PHP 8.4+ exposes response headers through
+        // http_get_last_response_headers(); keep the legacy fallback for
+        // supported older runtimes without triggering the PHP 8.5 deprecation.
+        $responseHeaders = function_exists('http_get_last_response_headers')
+            ? http_get_last_response_headers()
+            : ($http_response_header ?? null);
+        if (is_array($responseHeaders) && isset($responseHeaders[0])) {
+            $statusLine = $responseHeaders[0];
             if (preg_match('/HTTP\/[\d.]+\s+(\d{3})/', $statusLine, $matches)) {
                 $statusCode = (int)$matches[1];
                 if ($statusCode < 200 || $statusCode >= 300) {
@@ -183,7 +188,7 @@ final class Transport
     public function authHeaders(): array
     {
         $headers = [
-            'x-globiguard-client' => 'globiguard-php/0.1.0',
+            'x-globiguard-client' => 'globiguard-php/0.2.2',
             'x-globiguard-environment' => $this->environment,
         ];
         if ($this->credential->kind === 'local') {
@@ -267,17 +272,45 @@ final class GovernedActions
     public function authorizeActionOrThrow(array $body): array
     {
         $result = $this->authorizeAction($body);
+        self::assertExecutableAuthorization($result, ($body['dryRun'] ?? false) === true);
+        return $result;
+    }
+
+    public static function assertExecutableAuthorization(array $result, bool $simulation = false, ?int $now = null): void
+    {
         $decision = $result['decision'] ?? null;
-        if (in_array($decision, ['ALLOW', 'MODIFY'], true)) {
-            return $result;
-        }
         if ($decision === 'BLOCK') {
             throw new RuntimeException('GlobiGuard blocked the governed action.');
         }
         if ($decision === 'QUEUE') {
             throw new RuntimeException('GlobiGuard queued the governed action for review; do not perform the downstream business action yet.');
         }
-        throw new RuntimeException('GlobiGuard returned an unsupported decision; do not perform the downstream business action.');
+        if ($decision === 'MODIFY') {
+            throw new RuntimeException('Apply modifications through a typed handler and reauthorize the exact resulting action before execution.');
+        }
+        if ($decision !== 'ALLOW') {
+            throw new RuntimeException('GlobiGuard returned an unsupported decision; the governed action remains stopped.');
+        }
+        if ($simulation) {
+            throw new RuntimeException('A dry-run decision is not an execution permit. Reauthorize with dryRun disabled.');
+        }
+        if (($result['executable'] ?? null) !== true || ($result['nextAction'] ?? null) !== 'EXECUTE_EXACT_ACTION_ONCE') {
+            throw new RuntimeException('The control plane marked this response as non-executable. Reauthorize before execution.');
+        }
+        if (!in_array($result['approvalState'] ?? null, ['NOT_REQUIRED', 'APPROVED'], true)) {
+            throw new RuntimeException('Resolve review and reauthorize the exact current action before execution.');
+        }
+        $expiresAt = is_string($result['expiresAt'] ?? null) ? strtotime($result['expiresAt']) : false;
+        $currentTime = $now ?? time();
+        if ($expiresAt === false || $expiresAt <= $currentTime || $expiresAt - $currentTime > 300) {
+            throw new RuntimeException('Execution authority must have a current, bounded expiry. Reauthorize immediately before execution.');
+        }
+        if (is_array($result['obligations'] ?? null) && count($result['obligations']) > 0) {
+            throw new RuntimeException('Enforce all obligations and reauthorize before execution.');
+        }
+        if (is_array($result['modifications'] ?? null) && count($result['modifications']) > 0) {
+            throw new RuntimeException('Apply all modifications and reauthorize the exact resulting action before execution.');
+        }
     }
 
     public function authorizeAction(array $body): array
