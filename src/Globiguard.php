@@ -165,9 +165,14 @@ final class Transport
             throw new RuntimeException('GlobiGuard request failed.');
         }
         
-        // Check HTTP status code
-        if (isset($http_response_header)) {
-            $statusLine = $http_response_header[0];
+        // Check HTTP status code. PHP 8.4+ exposes response headers through
+        // http_get_last_response_headers(); keep the legacy fallback for
+        // supported older runtimes without triggering the PHP 8.5 deprecation.
+        $responseHeaders = function_exists('http_get_last_response_headers')
+            ? http_get_last_response_headers()
+            : ($http_response_header ?? null);
+        if (is_array($responseHeaders) && isset($responseHeaders[0])) {
+            $statusLine = $responseHeaders[0];
             if (preg_match('/HTTP\/[\d.]+\s+(\d{3})/', $statusLine, $matches)) {
                 $statusCode = (int)$matches[1];
                 if ($statusCode < 200 || $statusCode >= 300) {

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.3
+
+- Read HTTP response headers through `http_get_last_response_headers()` on PHP
+  8.4 and newer, while retaining the legacy scoped-header fallback for PHP 8.2
+  and 8.3.
+- Avoided the PHP 8.5 response-header deprecation without changing transport or
+  fail-closed status handling.
+
 ## 0.2.2
 
 - Corrected the GitHub Actions YAML for authenticated Packagist updates.
